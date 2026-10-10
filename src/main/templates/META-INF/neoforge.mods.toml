@@ -1,11 +1,13 @@
 modLoader="javafml"
 loaderVersion="${loader_version_range}"
 license="${mod_license}"
+issueTrackerURL="https://github.com/RoniCohen97/ae2-compacting-fix/issues"
 
 [[mods]]
 modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
+displayURL="https://github.com/RoniCohen97/ae2-compacting-fix"
 authors="${mod_authors}"
 description='''
 Makes AE2 autocrafting aware that the tiers of a compacting drawer (nuggets, ingots, blocks...) share one stock.

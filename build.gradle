@@ -2,6 +2,7 @@ plugins {
     id 'java-library'
     id 'net.neoforged.moddev' version '2.0.148'
     id 'idea'
+    id 'me.modmuss50.mod-publish-plugin' version '0.8.4'
 }
 
 tasks.named('wrapper', Wrapper).configure {
@@ -127,5 +128,48 @@ idea {
     module {
         downloadSources = true
         downloadJavadoc = true
+    }
+}
+
+// Publishing to CurseForge and Modrinth: ./gradlew publishMods
+// Needs CURSEFORGE_TOKEN / MODRINTH_TOKEN in the environment and the projects' ids in gradle.properties; without a
+// token it only does a dry run (checks everything, uploads nothing). The changelog is this version's section of
+// CHANGELOG.md.
+def changelogSection = {
+    def lines = file('CHANGELOG.md').readLines()
+    int start = lines.findIndexOf { it == "## ${mod_version}" }
+    if (start < 0)
+        return "Version ${mod_version}"
+    int end = lines.findIndexOf(start + 1) { it.startsWith('## ') }
+    return lines.subList(start + 1, end < 0 ? lines.size() : end).join('\n').trim()
+}
+
+publishMods {
+    file = jar.archiveFile
+    displayName = "${mod_name} ${mod_version}"
+    version = mod_version
+    changelog = changelogSection()
+    type = mod_version.contains('alpha') ? ALPHA : mod_version.contains('beta') ? BETA : STABLE
+    modLoaders.add('neoforge')
+    // A real upload only with both tokens
+    def tokens = ['CURSEFORGE_TOKEN', 'MODRINTH_TOKEN'].every { providers.environmentVariable(it).getOrNull() != null }
+    dryRun = !tokens
+
+    curseforge {
+        projectId = providers.gradleProperty('curseforge_project_id')
+        accessToken = providers.environmentVariable('CURSEFORGE_TOKEN')
+        minecraftVersions.add(minecraft_version)
+        javaVersions.add(JavaVersion.VERSION_21)
+        serverRequired = true
+        requires('applied-energistics-2')
+        optional('storage-drawers', 'functional-storage')
+    }
+
+    modrinth {
+        projectId = providers.gradleProperty('modrinth_project_id')
+        accessToken = providers.environmentVariable('MODRINTH_TOKEN')
+        minecraftVersions.add(minecraft_version)
+        requires('ae2')
+        optional('storagedrawers', 'functional-storage')
     }
 }
