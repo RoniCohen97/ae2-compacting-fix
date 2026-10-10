@@ -13,9 +13,9 @@ or shows it as missing on the plan screen, before you press Start.
 
 | | Version |
 |---|---|
-| Minecraft | 1.21.1 |
-| NeoForge | 21.1.x |
-| Applied Energistics 2 | 19.2.x |
+| Minecraft | 26.1.2 |
+| NeoForge | 26.1.2.x |
+| Applied Energistics 2 | 26.1.13-beta or newer |
 
 ## Supported drawers
 

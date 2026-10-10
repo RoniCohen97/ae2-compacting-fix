@@ -1,6 +1,7 @@
 package io.github.ronicohen97.ae2compactingfix.compat.functionalstorage;
 
-import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.item.ItemResource;
 
 import com.buuz135.functionalstorage.inventory.CompactingInventoryHandler;
 import com.buuz135.functionalstorage.inventory.ControllerInventoryHandler;
@@ -23,7 +24,7 @@ public final class FunctionalStoragePoolProvider implements PoolProvider {
     }
 
     @Override
-    public void collect(IItemHandler handler, PoolCollector out) {
+    public void collect(ResourceHandler<ItemResource> handler, PoolCollector out) {
         if (handler instanceof CompactingInventoryHandler compacting) {
             addPool(compacting, out);
         } else if (handler instanceof ControllerInventoryHandler controller) {

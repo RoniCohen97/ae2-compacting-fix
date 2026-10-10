@@ -30,11 +30,14 @@ upgrade really crafts the items, so they are separate stacks.
 
 ## Requirements
 
+This branch is the Minecraft 26.1 port; `main` is the 1.21.1 version.
+
+
 | | Version |
 |---|---|
-| Minecraft | 1.21.1 |
-| NeoForge | 21.1.x |
-| Applied Energistics 2 | 19.2.x |
+| Minecraft | 26.1.2 |
+| NeoForge | 26.1.2.x |
+| Applied Energistics 2 | 26.1.13-beta or newer |
 
 ## Limitations
 
@@ -45,7 +48,7 @@ upgrade really crafts the items, so they are separate stacks.
 
 ## Building
 
-JDK 21, then:
+JDK 25, then:
 
 ```
 ./gradlew build

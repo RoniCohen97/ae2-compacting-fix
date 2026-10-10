@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.0+26.1.2
+
+The 1.0.0 features, for Minecraft 26.1.2, NeoForge and AE2 26.1. It follows NeoForge's new transfer API, which replaces
+item handlers.
+
 ## 1.0.0
 
 The first release, for Minecraft 1.21.1, NeoForge and AE2 19.2.

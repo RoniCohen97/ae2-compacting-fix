@@ -29,16 +29,11 @@ base {
     archivesName = mod_id
 }
 
-// Minecraft 1.21.1 runs on Java 21
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+// Minecraft 26.1 runs on Java 25
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 neoForge {
     version = project.neo_version
-
-    parchment {
-        mappingsVersion = project.parchment_mappings_version
-        minecraftVersion = project.parchment_minecraft_version
-    }
 
     runs {
         client {
@@ -87,6 +82,7 @@ dependencies {
     compileOnly("maven.modrinth:storagedrawers:${storagedrawers_version}")
     localRuntime("maven.modrinth:storagedrawers:${storagedrawers_version}")
     compileOnly("maven.modrinth:functional-storage:${functionalstorage_version}")
+    compileOnly("maven.modrinth:titanium:${titanium_version}") // types of Functional Storage's handlers
     localRuntime("maven.modrinth:functional-storage:${functionalstorage_version}")
     localRuntime("maven.modrinth:titanium:${titanium_version}")
 
@@ -159,7 +155,7 @@ publishMods {
         projectId = providers.gradleProperty('curseforge_project_id')
         accessToken = providers.environmentVariable('CURSEFORGE_TOKEN')
         minecraftVersions.add(minecraft_version)
-        javaVersions.add(JavaVersion.VERSION_21)
+        javaVersions.add(JavaVersion.VERSION_25)
         serverRequired = true
         requires('applied-energistics-2')
         optional('storage-drawers', 'functional-storage')

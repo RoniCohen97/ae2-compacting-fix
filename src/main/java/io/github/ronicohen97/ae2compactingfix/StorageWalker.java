@@ -5,12 +5,15 @@ import java.util.IdentityHashMap;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.item.ItemResource;
 
+import appeng.api.stacks.AEKeyType;
 import appeng.api.storage.MEStorage;
+import appeng.me.storage.ExternalStorageFacade;
 import io.github.ronicohen97.ae2compactingfix.mixin.CompositeStorageAccessor;
 import io.github.ronicohen97.ae2compactingfix.mixin.DelegatingMEInventoryAccessor;
-import io.github.ronicohen97.ae2compactingfix.mixin.ItemHandlerFacadeAccessor;
+import io.github.ronicohen97.ae2compactingfix.mixin.ResourceHandlerFacadeAccessor;
 import io.github.ronicohen97.ae2compactingfix.mixin.NetworkStorageAccessor;
 
 /**
@@ -25,11 +28,11 @@ public final class StorageWalker {
     }
 
     /** Must run on the server thread, which owns these objects. */
-    public static void forEachItemHandler(MEStorage root, Consumer<IItemHandler> action) {
+    public static void forEachItemHandler(MEStorage root, Consumer<ResourceHandler<ItemResource>> action) {
         walk(root, action, Collections.newSetFromMap(new IdentityHashMap<>()));
     }
 
-    private static void walk(MEStorage storage, Consumer<IItemHandler> action, Set<MEStorage> visited) {
+    private static void walk(MEStorage storage, Consumer<ResourceHandler<ItemResource>> action, Set<MEStorage> visited) {
         if (storage == null || !visited.add(storage))
             return;
 
@@ -38,13 +41,18 @@ public final class StorageWalker {
                 for (var mounted : storages)
                     walk(mounted, action, visited);
             }
+            for (var mounted : network.ae2compactingfix$getSecondPassInventories())
+                walk(mounted, action, visited);
         } else if (storage instanceof DelegatingMEInventoryAccessor delegating) {
             walk(delegating.ae2compactingfix$getDelegate(), action, visited);
         } else if (storage instanceof CompositeStorageAccessor composite) {
             for (var part : composite.ae2compactingfix$getStorages().values())
                 walk(part, action, visited);
-        } else if (storage instanceof ItemHandlerFacadeAccessor facade) {
-            action.accept(facade.ae2compactingfix$getHandler());
+        } else if (storage instanceof ResourceHandlerFacadeAccessor facade
+                && ((ExternalStorageFacade) storage).getKeyType() == AEKeyType.items()) {
+            @SuppressWarnings("unchecked") // an item facade wraps an item handler
+            var handler = (ResourceHandler<ItemResource>) facade.ae2compactingfix$getHandler();
+            action.accept(handler);
         }
     }
 }

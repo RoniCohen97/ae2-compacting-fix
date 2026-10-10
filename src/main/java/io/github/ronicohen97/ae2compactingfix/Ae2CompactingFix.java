@@ -23,7 +23,7 @@ public final class Ae2CompactingFix {
         register("storagedrawers", () -> StorageDrawersPoolProvider.register());
         register("functionalstorage", () -> FunctionalStoragePoolProvider.register());
 
-        if (!FMLEnvironment.production) {
+        if (!FMLEnvironment.isProduction()) {
             modBus.addListener(FMLCommonSetupEvent.class, event -> loadMixinTargets());
             DevSelfTest.registerIfRequested();
         }
@@ -38,7 +38,7 @@ public final class Ae2CompactingFix {
                 "appeng.crafting.inv.CraftingSimulationState",
                 "appeng.crafting.inv.ChildCraftingSimulationState",
                 "appeng.crafting.inv.NetworkCraftingSimulationState",
-                "appeng.me.storage.ExternalStorageFacade$ItemHandlerFacade",
+                "appeng.me.storage.ExternalStorageFacade$ResourceHandlerFacade",
                 "appeng.me.storage.NetworkStorage",
                 "appeng.me.storage.DelegatingMEInventory",
                 "appeng.me.storage.CompositeStorage",

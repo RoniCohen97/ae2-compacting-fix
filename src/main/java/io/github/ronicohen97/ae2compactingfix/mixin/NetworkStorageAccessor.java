@@ -14,4 +14,8 @@ import appeng.me.storage.NetworkStorage;
 public interface NetworkStorageAccessor {
     @Accessor("priorityInventory")
     NavigableMap<Integer, List<MEStorage>> ae2compactingfix$getPriorityInventory();
+
+    /** Storages AE2 only uses once the prioritized ones are exhausted. */
+    @Accessor("secondPassInventories")
+    List<MEStorage> ae2compactingfix$getSecondPassInventories();
 }

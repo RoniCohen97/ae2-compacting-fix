@@ -7,11 +7,12 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.item.ItemResource;
 
 import com.jaquadro.minecraft.storagedrawers.api.storage.IDrawerGroup;
 import com.jaquadro.minecraft.storagedrawers.api.storage.IFractionalDrawer;
-import com.jaquadro.minecraft.storagedrawers.capabilities.DrawerItemHandler;
+import com.jaquadro.minecraft.storagedrawers.inventory.DrawerGroupResourceHandler;
 
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKey;
@@ -32,8 +33,8 @@ public final class StorageDrawersPoolProvider implements PoolProvider {
 
     static {
         try {
-            HANDLER_GROUP = MethodHandles.privateLookupIn(DrawerItemHandler.class, MethodHandles.lookup())
-                    .findVarHandle(DrawerItemHandler.class, "group", IDrawerGroup.class);
+            HANDLER_GROUP = MethodHandles.privateLookupIn(DrawerGroupResourceHandler.class, MethodHandles.lookup())
+                    .findVarHandle(DrawerGroupResourceHandler.class, "group", IDrawerGroup.class);
             FRACTIONAL_DRAWER = Class.forName(
                     "com.jaquadro.minecraft.storagedrawers.block.tile.tiledata.FractionalDrawerGroup$FractionalDrawer");
             var storageClass = Class.forName(
@@ -50,8 +51,8 @@ public final class StorageDrawersPoolProvider implements PoolProvider {
     }
 
     @Override
-    public void collect(IItemHandler handler, PoolCollector out) {
-        if (!(handler instanceof DrawerItemHandler))
+    public void collect(ResourceHandler<ItemResource> handler, PoolCollector out) {
+        if (!(handler instanceof DrawerGroupResourceHandler))
             return;
         var group = (IDrawerGroup) HANDLER_GROUP.get(handler);
         if (group == null || !group.isGroupValid())

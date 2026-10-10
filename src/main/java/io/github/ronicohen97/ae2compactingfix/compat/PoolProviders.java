@@ -7,7 +7,8 @@ import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
 
-import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.item.ItemResource;
 
 import io.github.ronicohen97.ae2compactingfix.model.PoolCollector;
 
@@ -23,7 +24,7 @@ public final class PoolProviders {
         PROVIDERS.add(provider);
     }
 
-    public static void collect(IItemHandler handler, PoolCollector out) {
+    public static void collect(ResourceHandler<ItemResource> handler, PoolCollector out) {
         for (var provider : PROVIDERS) {
             try {
                 provider.collect(handler, out);

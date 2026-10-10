@@ -2,7 +2,7 @@
   "required": true,
   "minVersion": "0.8",
   "package": "io.github.ronicohen97.ae2compactingfix.mixin",
-  "compatibilityLevel": "JAVA_21",
+  "compatibilityLevel": "JAVA_25",
   "mixins": [
     "ChildCraftingSimulationStateAccessor",
     "CompositeStorageAccessor",
@@ -10,9 +10,9 @@
     "CraftingPlanSummaryMixin",
     "CraftingSimulationStateMixin",
     "DelegatingMEInventoryAccessor",
-    "ItemHandlerFacadeAccessor",
     "NetworkCraftingSimulationStateMixin",
-    "NetworkStorageAccessor"
+    "NetworkStorageAccessor",
+    "ResourceHandlerFacadeAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

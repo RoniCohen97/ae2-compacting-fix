@@ -38,12 +38,14 @@ import io.github.ronicohen97.ae2compactingfix.model.PoolSnapshotHolder;
 final class DevSelfTest {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final int SETUP_TICK = 50;
-    private static final int START_TICK = 100;
+    private static final int START_TICK = 300;
     private static final int TIMEOUT_TICKS = 400;
 
     private static int ticks;
     @Nullable
     private static IGridNode node;
+    @Nullable
+    private static BlockPos drawerPos;
     @Nullable
     private static Future<ICraftingPlan> calculation;
 
@@ -61,8 +63,19 @@ final class DevSelfTest {
             ticks++;
             boolean done = true;
             try {
-                if (ticks == SETUP_TICK)
-                    placeDrawer(event.getServer().overworld());
+                if (ticks == SETUP_TICK) {
+                    // Spawn chunks are not kept loaded any more, and AE2 only builds its grid in ticking chunks
+                    var level = event.getServer().overworld();
+                    level.setChunkForced(pos.getX() >> 4, pos.getZ() >> 4, true);
+                    placeDrawer(level);
+                }
+                if (ticks == SETUP_TICK + 100)
+                    fillDrawer(event.getServer().overworld());
+                if (ticks == START_TICK - 50 && drawerPos != null) {
+                    // The drawer was placed before the network was up: tell the storage bus again
+                    var level = event.getServer().overworld();
+                    level.updateNeighborsAt(drawerPos, level.getBlockState(drawerPos).getBlock());
+                }
                 if (ticks < START_TICK)
                     return;
                 if (ticks == START_TICK)
@@ -92,12 +105,21 @@ final class DevSelfTest {
         var pos = new BlockPos(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()),
                 Integer.parseInt(parts[2].trim()));
         level.getChunk(pos);
+        drawerPos = pos;
         boolean storageDrawers = "storagedrawers".equals(System.getProperty("ae2compactingfix.selfTestDrawerMod"));
         var blockId = storageDrawers ? "storagedrawers:compacting_drawers_3" : "functionalstorage:compacting_drawer";
         var block = net.minecraft.core.registries.BuiltInRegistries.BLOCK
-                .get(net.minecraft.resources.ResourceLocation.parse(blockId));
+                .getValue(net.minecraft.resources.Identifier.parse(blockId));
         level.setBlockAndUpdate(pos, block.defaultBlockState());
-        var handler = level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, pos,
+    }
+
+    /** Fills the drawer {@link #placeDrawer} placed, once it has ticked (Functional Storage redoes its setup then). */
+    private static void fillDrawer(ServerLevel level) {
+        if (drawerPos == null)
+            return;
+        var pos = drawerPos;
+        var blockId = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(level.getBlockState(pos).getBlock());
+        var handler = level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.Item.BLOCK, pos,
                 null);
         if (handler == null) {
             LOGGER.error("SELFTEST could not place {} at {}", blockId, pos);
@@ -108,17 +130,34 @@ final class DevSelfTest {
             util.setup(new net.minecraft.world.item.ItemStack(Items.IRON_NUGGET));
             compacting.setup(util);
         }
-        // Start from an empty drawer (the world may already have one there)
-        for (int i = 0; i < handler.getSlots(); i++) {
-            while (!handler.extractItem(i, Integer.MAX_VALUE, false).isEmpty()) {
+        // Start from an empty drawer (the world may already have one there), then insert 81 nuggets
+        int inserted;
+        try (var tx = net.neoforged.neoforge.transfer.transaction.Transaction.openRoot()) {
+            for (int i = 0; i < handler.size(); i++) {
+                var resource = handler.getResource(i);
+                if (!resource.isEmpty())
+                    handler.extract(i, resource, Integer.MAX_VALUE, tx);
             }
+            inserted = handler.insert(net.neoforged.neoforge.transfer.item.ItemResource.of(Items.IRON_NUGGET), 81, tx);
+            tx.commit();
         }
-        // Storage Drawers: slot 0 accepts any item and sets an empty compacting drawer up
-        var left = handler.insertItem(0, new net.minecraft.world.item.ItemStack(Items.IRON_NUGGET, 81), false);
         var slots = new StringBuilder();
-        for (int i = 0; i < handler.getSlots(); i++)
-            slots.append(' ').append(handler.getStackInSlot(i));
-        LOGGER.info("SELFTEST placed {} at {}: slots{} (not inserted: {})", blockId, pos, slots, left);
+        for (int i = 0; i < handler.size(); i++)
+            slots.append(' ').append(handler.getAmountAsLong(i)).append(' ').append(handler.getResource(i));
+        LOGGER.info("SELFTEST placed {} at {}: slots{} (inserted: {})", blockId, pos, slots, inserted);
+    }
+
+    private static String describeHandler(net.neoforged.neoforge.transfer.ResourceHandler<?> handler) {
+        var text = new StringBuilder(handler.toString());
+        for (int i = 0; i < handler.size(); i++)
+            text.append(" | ").append(handler.getAmountAsLong(i)).append(' ').append(handler.getResource(i));
+        if (handler instanceof com.buuz135.functionalstorage.inventory.CompactingInventoryHandler c) {
+            text.append(" | amount=").append(c.getAmount()).append(" setup=").append(c.isSetup())
+                    .append(" creative=").append(c.isCreative());
+            for (var result : c.getResultList())
+                text.append(" | result ").append(result.getResult()).append(" needed ").append(result.getNeeded());
+        }
+        return text.toString();
     }
 
     /** @return whether a crafting calculation is running and must be polled */
@@ -130,8 +169,14 @@ final class DevSelfTest {
             if (node == null && host != null)
                 node = host.getGridNode(side);
         }
+        if (node == null && level.getBlockEntity(pos) instanceof appeng.blockentity.grid.AENetworkedBlockEntity be) {
+            var main = be.getMainNode();
+            LOGGER.info("SELFTEST host {} main node {} ready={} online={}", host, main.getNode(), main.isReady(),
+                    main.isOnline());
+            node = main.getNode();
+        }
         if (node == null) {
-            LOGGER.error("SELFTEST no grid node at {}", pos);
+            LOGGER.error("SELFTEST no grid node at {}: {} / {}", pos, level.getBlockState(pos), level.getBlockEntity(pos));
             return false;
         }
 
@@ -140,6 +185,22 @@ final class DevSelfTest {
         for (var entry : storage.getInventory().getAvailableStacks())
             LOGGER.info("SELFTEST network has {} x{}", entry.getKey(), entry.getLongValue());
 
+        for (var list : ((io.github.ronicohen97.ae2compactingfix.mixin.NetworkStorageAccessor) storage.getInventory())
+                .ae2compactingfix$getPriorityInventory().values()) {
+            for (var mounted : list) {
+                LOGGER.info("SELFTEST mounted {}", mounted.getClass().getName());
+                if (mounted instanceof io.github.ronicohen97.ae2compactingfix.mixin.DelegatingMEInventoryAccessor d) {
+                    var inner = d.ae2compactingfix$getDelegate();
+                    LOGGER.info("SELFTEST   delegate {}", inner.getClass().getName());
+                    if (inner instanceof io.github.ronicohen97.ae2compactingfix.mixin.CompositeStorageAccessor c)
+                        c.ae2compactingfix$getStorages().forEach((type, part) -> LOGGER.info("SELFTEST     {} -> {} {}",
+                                type, part.getClass().getName(),
+                                part instanceof io.github.ronicohen97.ae2compactingfix.mixin.ResourceHandlerFacadeAccessor f
+                                        ? describeHandler(f.ae2compactingfix$getHandler())
+                                        : ""));
+                }
+            }
+        }
         var root = new NetworkCraftingSimulationState(storage, null);
         LOGGER.info("SELFTEST pools: {}", ((PoolSnapshotHolder) root).ae2compactingfix$getPoolSnapshot());
 
