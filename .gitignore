@@ -1,0 +1,50 @@
+# Gradle
+.gradle/
+build/
+!**/src/**/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# NeoForge run folders and generated data cache
+run/
+runs/
+run-data/
+run-gametest/
+run-server/
+run-selftest/
+!**/src/**/run/
+**/src/generated/**/.cache/
+repo/
+!**/src/**/repo/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+!**/src/**/out/
+.run/
+
+# Eclipse / VS Code
+.apt_generated
+.classpath
+.eclipse/
+.factorypath
+.project
+.settings/
+bin/
+!**/src/**/bin/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+tools/textures/preview/
+__pycache__/
+
+# Screenshots for the CurseForge page
+screenshots/
